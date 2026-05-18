@@ -26,3 +26,7 @@ const validation = () => {
     }
     return {ok: true, value: studySession}; 
 }
+
+const studyList = [
+    {subject: 'x', duration: 1}
+]
