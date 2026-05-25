@@ -46,7 +46,7 @@ const formatTime = (totalMinutes) => {
 
 const durationTotal = (sessionList) => {
     return sessionList.reduce((total, session) => total + session.duration, 0);
-}
+};
 
 const listAllSessions = (sessionList) => {
     console.log('Recorded study sessions:');
