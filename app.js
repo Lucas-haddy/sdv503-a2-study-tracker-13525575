@@ -5,47 +5,88 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
-rl.question('What did you study? ', (answer) => {
-    const subject = answer;
-});
+let sessionList = [];
 
-let studySession = {
-    subject: 'math',
-    duration: 1
-};
+function ask(q) {
+    return new Promise(resolve => rl.question(q, resolve));
+}
 
-let sessionList = [
-];
 
-const validation = () => {
+const validateIfObject = (session) => {
     const errors = [];
-    if (studySession === null || typeof studySession !== 'object') {
-        return {ok: false, errors: ['studySession must be an object.']};
+    if (session === null || typeof session !== 'object') {
+        errors.push('Input must be an object.');
     }
-    if (typeof studySession.subject !== 'string') {
+    return {ok: errors.length === 0, errors: errors};
+}
+
+const validateTopic = (session) => {
+    const errors = [];
+    if (typeof session.subject !== 'string' || session.subject === '') {
         errors.push('Subject must be a string.')
-    }
-    if (studySession.subject === '') {
-        errors.push('Subject cannot be empty.')
-    }
-    if (studySession.subject.includes(' ')) {
+    } else if (session.subject.includes(' ')) {
         errors.push('Subject cannot have whitespace.');
     }
-    if (typeof studySession.duration !== 'number' || (!Number.isInteger(studySession.duration))) {
-        errors.push('Duration must be a whole number.');
-    } else if (studySession.duration.length <= 0) {
-        errors.push('Duration cannot be zero or less.')
+    return {ok: errors.length === 0, errors: errors};
+};
+
+const validateDuration = (session) => {
+    const errors = [];
+    if (!Number.isInteger(session.duration) || session.duration <= 0) {
+        errors.push('Duration must be a whole number greater than zero.');
     }
-    if (errors.length > 0) {
-        return {ok: false, errors: errors};
-    }
-    return {ok: true, value: studySession}; 
+    return {ok: errors.length === 0, errors: errors}; 
 }
 
-const result = validation();
-if (result.ok) {
-    sessionList.push(result.value);
-    console.log('Session added successfully!', sessionList);    
-} else {
-    console.log('Validation failed.')
+const durationTotal = (sessionList) => {
+    return sessionList.reduce((total, session) => total + session.duration, 0);
 }
+
+const listAllSessions = (sessionList) => {
+    console.log('Recorded study sessions:');
+    sessionList.forEach((session, index) => {
+        console.log(`Subject: ${session.subject}, Duration: ${session.duration} hours`);
+    });
+};
+
+async function addNewSession() {
+    let keepAdding = true;
+
+    while (keepAdding) {
+        const subject = await ask('\nWhat did you study? ');
+        const durationInput = await ask('How many hours did you study? ');
+
+        const studySession = {
+            subject: subject,
+            duration: Number(durationInput)
+        };
+
+        const objCheck = validateIfObject(studySession);
+        const topicCheck = validateTopic(studySession);
+        const durationCheck = validateDuration(studySession);
+
+        const allErrors = [...objCheck.errors, ...topicCheck.errors, ...durationCheck.errors];
+
+        if (allErrors.length === 0) {
+            sessionList.push(studySession);
+            console.log('Session added successfully!');
+        } else {
+            console.log('Validation failed:', allErrors.join(' '));
+        }
+
+        const answer = await ask('\nWould you like to add another session? (yes/no): ');
+        if (answer.toLowerCase() !== 'yes' && answer.toLowerCase() !== 'y') {
+            keepAdding = false;
+        }
+    };
+    console.log(`\nTotal study time: ${durationTotal(sessionList)} hours`);
+
+    const showHistory = await ask('Would you like to see all sessions? (yes/no): ');
+    if (showHistory.toLowerCase() === 'yes' || showHistory.toLowerCase() === 'y') {
+        listAllSessions(sessionList);
+    }
+
+    rl.close();
+} 
+
+addNewSession();
