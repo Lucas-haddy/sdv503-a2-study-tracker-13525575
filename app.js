@@ -33,10 +33,16 @@ const validateTopic = (session) => {
 const validateDuration = (session) => {
     const errors = [];
     if (!Number.isInteger(session.duration) || session.duration <= 0) {
-        errors.push('Duration must be a whole number greater than zero.');
+        errors.push('Duration must be a whole number of minutes greater than zero.');
     }
     return {ok: errors.length === 0, errors: errors}; 
 }
+
+const formatTime = (totalMinutes) => {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours} hours and ${minutes} minutes`;
+};
 
 const durationTotal = (sessionList) => {
     return sessionList.reduce((total, session) => total + session.duration, 0);
@@ -45,7 +51,7 @@ const durationTotal = (sessionList) => {
 const listAllSessions = (sessionList) => {
     console.log('Recorded study sessions:');
     sessionList.forEach((session, index) => {
-        console.log(`Subject: ${session.subject}, Duration: ${session.duration} hours`);
+        console.log(`Subject: ${session.subject}, Duration: ${formatTime(session.duration)}`);
     });
 };
 
@@ -54,11 +60,13 @@ async function addNewSession() {
 
     while (keepAdding) {
         const subject = await ask('\nWhat did you study? ');
-        const durationInput = await ask('How many hours did you study? ');
+        const minutesInput = await ask('How many minutes did you study? ');
+        const hoursInput = await ask('How many hours did you study? ');
+        const totalMinutesInput = (Number(hoursInput) * 60) + Number(minutesInput);
 
         const studySession = {
             subject: subject,
-            duration: Number(durationInput)
+            duration: totalMinutesInput
         };
 
         const objCheck = validateIfObject(studySession);
@@ -79,7 +87,8 @@ async function addNewSession() {
             keepAdding = false;
         }
     };
-    console.log(`\nTotal study time: ${durationTotal(sessionList)} hours`);
+    const totalMinutes = durationTotal(sessionList);
+    console.log(`\nTotal study time: ${formatTime(totalMinutes)}`);
 
     const showHistory = await ask('Would you like to see all sessions? (yes/no): ');
     if (showHistory.toLowerCase() === 'yes' || showHistory.toLowerCase() === 'y') {
